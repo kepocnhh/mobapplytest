@@ -8,4 +8,9 @@ public class OrdersResponse
     extends Response
 {
     public List<Order> orderList;
+
+    public OrdersResponse(List<Order> ol)
+    {
+        orderList = ol;
+    }
 }

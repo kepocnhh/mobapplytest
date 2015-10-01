@@ -1,7 +1,10 @@
 package com.mobapply.test.restCore.request.get;
 
+import com.mobapply.test.models.Order;
 import com.mobapply.test.restCore.request.Request;
 import com.mobapply.test.restCore.response.OrdersResponse;
+
+import java.util.List;
 
 public class OrdersRequest
     extends Request
@@ -15,7 +18,7 @@ public class OrdersRequest
     public OrdersResponse loadDataFromNetwork() throws Exception
     {
         super.loadDataFromNetwork();
-        OrdersResponse response = getService().getOrders();
-        return response;
+        List<Order> orders = getService().getOrders();
+        return new OrdersResponse(orders);
     }
 }
