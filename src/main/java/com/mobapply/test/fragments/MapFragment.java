@@ -1,6 +1,7 @@
 package com.mobapply.test.fragments;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -22,6 +23,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.mobapply.test.R;
 import com.mobapply.test.models.Order;
 
@@ -113,19 +115,36 @@ public class MapFragment
         geocoder = new Geocoder(getActivity());
         for(int i=0; i<orders.size(); i++)
         {
-            LatLng coord = addAddress(orders.get(i).departureAddress, BitmapDescriptorFactory.HUE_GREEN);
-            if(coord != null)
+            LatLng coordDepartureAddress = addAddress(orders.get(i).departureAddress);
+            LatLng coordDestinationAddress = addAddress(orders.get(i).destinationAddress);
+            if(coordDepartureAddress == null || coordDestinationAddress == null)
             {
-                builder.include(coord);
+                continue;
             }
-            coord = addAddress(orders.get(i).destinationAddress, BitmapDescriptorFactory.HUE_RED);
-            if(coord != null)
-            {
-                builder.include(coord);
-            }
+            mMap.addMarker(new MarkerOptions()
+                    .position(coordDepartureAddress)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+            mMap.addMarker(new MarkerOptions()
+                    .position(coordDestinationAddress)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            builder.include(coordDepartureAddress);
+            builder.include(coordDestinationAddress);
+            PolylineOptions polylineOptions = new PolylineOptions()
+                    .add(coordDepartureAddress).add(coordDestinationAddress)
+                    .color(Color.BLACK).width(4);
+            mMap.addPolyline(polylineOptions);
         }
         //
-        LatLngBounds bounds = builder.build();
+        LatLngBounds bounds = null;
+        try
+        {
+            bounds = builder.build();
+        }
+        catch (Exception e)
+        {
+            Log.e("Error", "crash set bounds");
+            return;
+        }
         int padding = 50; // offset from edges of the map in pixels
         final CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback()
@@ -138,13 +157,25 @@ public class MapFragment
         });
     }
 
-    private LatLng addAddress(Order.Address a, float f)
+    private LatLng addAddress(Order.Address a)
     {
         Geocoder geocoder = new Geocoder(getActivity());
         List<Address> address = null;
         try
         {
-            address = geocoder.getFromLocationName(a.zipCode+" "+a.country+" "+a.city+" ", 1);
+            String stringAddress = a.zipCode+" "
+//                    +a.countryCode+" "
+                    +a.country+" "
+                    +a.city;
+            if(a.street != null && a.street.isEmpty())
+            {
+                stringAddress += " " +a.street;
+                if(a.houseNumber != null && a.houseNumber.isEmpty())
+                {
+                    stringAddress += " " +a.houseNumber;
+                }
+            }
+            address = geocoder.getFromLocationName(stringAddress, 1);
         }
         catch (IOException e)
         {
@@ -155,9 +186,6 @@ public class MapFragment
             return null;
         }
         LatLng coord = new LatLng(address.get(0).getLatitude(), address.get(0).getLongitude());
-        mMap.addMarker(new MarkerOptions()
-                .position(coord)
-                .icon(BitmapDescriptorFactory.defaultMarker(f)));
         return coord;
     }
 }

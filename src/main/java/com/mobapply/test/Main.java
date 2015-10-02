@@ -2,6 +2,8 @@ package com.mobapply.test;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.mobapply.test.fragments.MapFragment;
@@ -23,6 +25,8 @@ public class Main
 
     private MapFragment mapWindow;
 
+    private ProgressBar waiter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -36,6 +40,8 @@ public class Main
 
     private void init()
     {
+        waiter = (ProgressBar)findViewById(R.id.waiter);
+        waiter.setVisibility(View.VISIBLE);
         request();
     }
 
@@ -51,6 +57,7 @@ public class Main
             {
                 Toast.makeText(getApplicationContext(), spiceException.getMessage(),
                         Toast.LENGTH_SHORT).show();
+                waiter.setVisibility(View.INVISIBLE);
             }
 
             @Override
@@ -64,10 +71,12 @@ public class Main
 
     private void requestSuccess(List<Order> orderList)
     {
+        waiter.setVisibility(View.INVISIBLE);
         mapWindow = MapFragment.getInstance(orderList);
         getSupportFragmentManager().beginTransaction().
                 add(R.id.mapFrame, mapWindow).
                 addToBackStack("MapWindowFragment").
                 commit();
+        spiceManager.shouldStop();
     }
 }
